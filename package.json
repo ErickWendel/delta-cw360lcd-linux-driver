@@ -1,0 +1,20 @@
+{
+  "name": "delta-center-linux-compat",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local importer and Linux compatibility build for a user-supplied Delta Center installation",
+  "scripts": {
+    "import": "node scripts/import-delta.mjs",
+    "test": "node --test test/*.test.mjs",
+    "assemble:linux": "node scripts/assemble-linux.mjs",
+    "build:linux:dir": "node scripts/assemble-linux.mjs",
+    "build:linux": "node scripts/assemble-linux.mjs && electron-builder --config electron-builder.yml --prepackaged outputs/linux-unpacked --linux AppImage",
+    "build:linux:deb": "electron-builder --config electron-builder.yml --linux deb"
+  },
+  "devDependencies": {
+    "@electron/asar": "^3.4.1",
+    "electron": "37.9.0",
+    "electron-builder": "^26.0.12"
+  }
+}

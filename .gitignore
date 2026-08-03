@@ -1,0 +1,9 @@
+node_modules/
+work/
+outputs/*
+!outputs/.gitkeep
+!outputs/*.md
+!outputs/*.sh
+!outputs/*.rules
+!outputs/SHA256SUMS.txt
+*.log

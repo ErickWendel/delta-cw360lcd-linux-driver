@@ -1,0 +1,29 @@
+appId: io.github.delta-center-linux-compat
+productName: Delta Center Linux Compatibility
+copyright: Compatibility patches only; vendor resources supplied locally by the user
+directories:
+  app: work/vendor-app
+  output: outputs
+extraMetadata:
+  name: delta-center-linux-compat
+  version: 2.0.11
+  main: main/index.js
+asar: true
+npmRebuild: false
+asarUnpack:
+  - "**/*.node"
+extraResources:
+  - from: work/vendor-resources/main
+    to: main
+    filter:
+      - "**/*"
+linux:
+  target:
+    - AppImage
+  category: Utility
+  executableName: delta-center
+  synopsis: Delta CW360LCD compatibility controller
+  description: Locally built Linux compatibility package for a user-supplied Delta Center installation.
+  artifactName: delta-center-linux-compat-${version}-${arch}.${ext}
+appImage:
+  artifactName: delta-center-linux-compat-${version}-${arch}.${ext}
