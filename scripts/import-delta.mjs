@@ -81,6 +81,30 @@ patchFile("main/util/system.js", (text) => {
 patchFile("main/util/public.js", (text) => {
   text = replaceRequired(
     text,
+    "function isPath(str) {\n  const pathRegex =",
+    "function isPath(str) {\n  if (process.platform !== 'win32') return path.isAbsolute(str);\n  const pathRegex =",
+    "accept absolute Linux media paths",
+  );
+  text = replaceRequired(
+    text,
+    "function getMediaReplacePath(dir = \"/\") {\n  if (app.isPackaged) {",
+    "function getMediaReplacePath(dir = \"/\") {\n  if (app.isPackaged || process.platform === 'linux') {",
+    "serve Linux media from the writable user profile",
+  );
+  text = replaceRequired(
+    text,
+    "async function checkAdmin() {\n  if (!(await isElevated())) {",
+    "async function checkAdmin() {\n  if (process.platform !== 'win32') { log.log('isAdmin', true); return true; }\n  if (!(await isElevated())) {",
+    "skip Windows administrator check on Linux",
+  );
+  text = replaceRequired(
+    text,
+    "async function setSubProcessPids() {\n  const cmd = `tasklist",
+    "async function setSubProcessPids() {\n  if (process.platform !== 'win32') return [];\n  const cmd = `tasklist",
+    "skip Windows process-priority commands on Linux",
+  );
+  text = replaceRequired(
+    text,
     "async function installService(openAtLogin, openAsHidden = true) {",
     "async function installService(openAtLogin, openAsHidden = true) {\n  if (process.platform !== 'win32') {\n    app.setLoginItemSettings({ openAtLogin: Boolean(openAtLogin), openAsHidden: Boolean(openAsHidden), args: openAsHidden ? ['--hidden'] : [] });\n    return true;\n  }",
     "cross-platform startup",
@@ -113,11 +137,43 @@ patchFile("main/util/media.js", (text) => {
     "    let ffmpegPath = process.platform === 'linux' ? (process.env.FFMPEG_PATH || 'ffmpeg') : require('@ffmpeg-installer/ffmpeg').path;\n    let ffprobePath = process.platform === 'linux' ? (process.env.FFPROBE_PATH || 'ffprobe') : require('@ffprobe-installer/ffprobe').path;",
     "Linux FFmpeg lookup",
   );
+  text = replaceRequired(
+    text,
+    "            const dimensions = imageSizeFromFile(filePath);\n            resolve({width: dimensions.width, height: dimensions.height})",
+    "            imageSizeFromFile(filePath)\n                .then((dimensions) => resolve({width: dimensions.width, height: dimensions.height}))\n                .catch(() => resolve(null));",
+    "await asynchronous image dimensions",
+  );
   return text;
 });
 
+patchFile("main/util/i18n.js", (text) => replaceRequired(
+  text,
+  "function createTray(close) {\n  callBack = close || callBack;",
+  "function createTray(close) {\n  callBack = close || callBack;\n  if (process.platform !== 'win32') return;",
+  "skip unsupported Windows tray icon on Linux",
+));
+
+patchFile("main/_replace_DELTA_CENTRO/util/device.js", (text) => {
+  text = replaceRequired(
+    text,
+    "const { vendorId, productId } = item;",
+    "const vendorId = item.vendorId?.toUpperCase();\n            const productId = item.productId?.toUpperCase();",
+    "normalize Linux serial USB identifiers",
+  );
+  return text;
+});
+
+patchFile("main/bootstrap.js", (text) => replaceRequired(
+  text,
+  'const launched = publicFun.getLocalPath("hasLaunched.txt");',
+  'const launched = publicFun.getPath("hasLaunched.txt");',
+  "store first-launch marker in the writable user profile",
+));
+
 const patchedManifest = JSON.parse(fs.readFileSync(path.join(appOut, "package.json"), "utf8"));
-patchedManifest.productName = "Delta Center Linux Compatibility";
+// Electron's app.getName() selects the vendor-specific UI and device map. Keep
+// the internal product identity stable even though the Linux package is renamed.
+patchedManifest.productName = "DELTA_CENTRO";
 patchedManifest.description = "Local Linux compatibility build for Delta CW360LCD";
 fs.writeFileSync(path.join(appOut, "package.json"), `${JSON.stringify(patchedManifest, null, 2)}\n`);
 
