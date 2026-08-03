@@ -1,2 +1,2 @@
 912b115512c5398f9901be173bb74859a473f8ebaf57d260241fc699e895e331  delta-center-linux-compat-2.0.11-x64.tar.gz
-fe47fcef28c45594e8c061125c6553ef269f0c6f654cf7d507591c64a694cb00  delta-center-linux-handoff-source.zip
+19d066e632d994dc89053585bbade5e86d367feb57d198b115003e28e0fe80b4  delta-center-linux-handoff-source.zip

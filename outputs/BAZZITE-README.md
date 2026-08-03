@@ -12,6 +12,18 @@ Copy these three files to the Bazzite machine in the same directory:
 
 Also preserve `CONTINUE-ON-LINUX.md`, `delta-center-linux-handoff-source.zip`, and `SHA256SUMS.txt` so development can continue from Linux.
 
+## Before formatting Windows
+
+The runtime archive is intentionally excluded from Git because it contains Delta's proprietary files. Pushing the repository is not sufficient: copy the **entire `outputs` directory** to a USB drive, cloud storage, or a disk that will not be formatted.
+
+After copying it, verify the files at the destination:
+
+```bash
+sha256sum -c SHA256SUMS.txt
+```
+
+Do not format the Windows disk unless both entries report `OK`.
+
 Open a terminal in that directory and run:
 
 ```bash
@@ -19,7 +31,13 @@ chmod +x install-on-bazzite.sh
 ./install-on-bazzite.sh
 ```
 
-Unplug and reconnect the cooler, then launch **Delta Center (CW360LCD)** from the application menu.
+Unplug and reconnect the cooler. For the first launch, run it from a terminal and preserve the log:
+
+```bash
+~/.local/opt/delta-center/delta-center-launch 2>&1 | tee ~/delta-center-first-run.log
+```
+
+After the first test, it can be launched as **Delta Center (CW360LCD)** from the application menu.
 
 ## Notes
 
