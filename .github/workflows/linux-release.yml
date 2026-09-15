@@ -1,0 +1,102 @@
+name: Build Linux release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (for example v2.0.11)
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    env:
+      DELTA_SOURCE_URL: ${{ secrets.DELTA_SOURCE_URL }}
+      DELTA_SOURCE_SHA256: ${{ secrets.DELTA_SOURCE_SHA256 }}
+      DELTA_SOURCE_AUTH_TOKEN: ${{ secrets.DELTA_SOURCE_AUTH_TOKEN }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install system tools
+        run: sudo apt-get update && sudo apt-get install --yes ffmpeg p7zip-full unzip
+
+      - name: Validate vendor source configuration
+        run: |
+          test -n "$DELTA_SOURCE_URL" || {
+            echo "Missing DELTA_SOURCE_URL repository secret." >&2
+            echo "It must point to an authorized Windows Delta Center 2.0.11 installer or source archive." >&2
+            exit 1
+          }
+
+      - name: Download authorized Windows vendor input
+        run: |
+          mkdir -p work/source-download work/vendor-source
+          if test -n "$DELTA_SOURCE_AUTH_TOKEN"; then
+            curl --fail --location --retry 3 --retry-all-errors \
+              --header "Authorization: Bearer $DELTA_SOURCE_AUTH_TOKEN" \
+              "$DELTA_SOURCE_URL" --output work/source-download/delta-source
+          else
+            curl --fail --location --retry 3 --retry-all-errors \
+              "$DELTA_SOURCE_URL" --output work/source-download/delta-source
+          fi
+          if test -n "$DELTA_SOURCE_SHA256"; then
+            printf '%s  %s\n' "$DELTA_SOURCE_SHA256" work/source-download/delta-source | sha256sum --check
+          fi
+
+      - name: Extract Windows vendor input
+        run: |
+          7z x work/source-download/delta-source -owork/vendor-source >/dev/null
+          app_asar="$(find work/vendor-source -type f -path '*/resources/app.asar' -print -quit)"
+          test -n "$app_asar" || {
+            echo "The downloaded Windows input does not contain resources/app.asar." >&2
+            exit 1
+          }
+          vendor_root="$(dirname "$(dirname "$app_asar")")"
+          test -d "$vendor_root/resources/main" || {
+            echo "The downloaded Windows input does not contain resources/main." >&2
+            exit 1
+          }
+          printf 'DELTA_VENDOR_ROOT=%s\n' "$vendor_root" >> "$GITHUB_ENV"
+
+      - name: Install Node dependencies
+        run: npm install --ignore-scripts --no-package-lock
+
+      - name: Import and patch Delta Center
+        run: npm run import -- "$DELTA_VENDOR_ROOT"
+
+      - name: Build Linux packages
+        run: npm run build:linux
+
+      - name: Package portable release
+        run: npm run package:linux
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: delta-center-linux-${{ github.ref_name }}
+          path: release/
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: release/*

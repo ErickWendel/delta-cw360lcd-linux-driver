@@ -10,7 +10,8 @@
     "assemble:linux": "node scripts/assemble-linux.mjs",
     "build:linux:dir": "node scripts/assemble-linux.mjs",
     "build:linux": "node scripts/assemble-linux.mjs && electron-builder --config electron-builder.yml --prepackaged outputs/linux-unpacked --linux AppImage",
-    "build:linux:deb": "electron-builder --config electron-builder.yml --linux deb"
+    "build:linux:deb": "electron-builder --config electron-builder.yml --linux deb",
+    "package:linux": "node scripts/package-linux-release.mjs"
   },
   "devDependencies": {
     "@electron/asar": "^3.4.1",
